@@ -11,6 +11,29 @@ import {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+const getResponseText = (response) => {
+  if (!response) return "";
+  if (typeof response.text === "function") return response.text();
+  if (typeof response.text === "string") return response.text;
+  return "";
+};
+
+const extractJsonArray = (text) => {
+  if (!text) return null;
+  const start = text.indexOf("[");
+  const end = text.lastIndexOf("]");
+  if (start === -1 || end === -1 || end <= start) return null;
+  return text.slice(start, end + 1);
+};
+
+const extractJsonObject = (text) => {
+  if (!text) return null;
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  return text.slice(start, end + 1);
+};
+
 // @desc    Generate + SAVE interview questions for a session
 // @route   POST /api/ai/generate-questions
 // @access  Private
@@ -33,7 +56,7 @@ export const generateInterviewQuestions = async (req, res) => {
         .json({ success: false, message: "Session not found" });
     }
 
-    if (session.user.toString() !== req.user._id.toString()) {
+    if (!session.user || session.user.toString() !== req.user._id.toString()) {
       return res
         .status(403)
         .json({ success: false, message: "Not authorized" });
@@ -47,14 +70,17 @@ export const generateInterviewQuestions = async (req, res) => {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
+      config: { responseMimeType: "application/json" },
     });
     console.log("response: ", response);
 
     const parts = response.candidates?.[0]?.content?.parts ?? [];
-    const rawText = parts
+    const rawTextFromParts = parts
       .filter((p) => !p.thought) // gemini-2.5-flash includes thinking parts; skip them
       .map((p) => p.text ?? "")
       .join("");
+    const responseText = getResponseText(response);
+    const rawText = rawTextFromParts || responseText;
 
     const cleanedText = rawText
       .replace(/^```json\s*/, "")
@@ -67,12 +93,16 @@ export const generateInterviewQuestions = async (req, res) => {
     try {
       questions = JSON.parse(cleanedText);
     } catch {
-      const jsonMatch = cleanedText.match(/\[[\s\S]*\]/);
-      if (jsonMatch) questions = JSON.parse(jsonMatch[0]);
+      const jsonText = extractJsonArray(cleanedText);
+      if (jsonText) questions = JSON.parse(jsonText);
       else throw new Error("Failed to parse AI response as JSON");
     }
 
     if (!Array.isArray(questions)) throw new Error("Response is not an array");
+    questions = questions.filter(
+      (q) => q && typeof q.question === "string" && q.question.trim(),
+    );
+    if (!questions.length) throw new Error("No valid questions returned");
 
     //! 4. save to DB — was completely missing before
     const saved = await Question.insertMany(
@@ -94,7 +124,7 @@ export const generateInterviewQuestions = async (req, res) => {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "Failed to generate questions",
+      message: error.message || "Failed to generate questions",
       error: error.message,
     });
   }
@@ -119,9 +149,10 @@ export const generateConceptExplanation = async (req, res) => {
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash-lite",
       contents: prompt,
+      config: { responseMimeType: "application/json" },
     });
 
-    let rawText = response.text;
+    let rawText = getResponseText(response);
 
     // Clean it: Remove backticks, json markers, and any extra formatting
     const cleanedText = rawText
@@ -137,9 +168,9 @@ export const generateConceptExplanation = async (req, res) => {
       explanation = JSON.parse(cleanedText);
     } catch (parseError) {
       // If parsing fails, try to extract JSON object from text
-      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        explanation = JSON.parse(jsonMatch[0]);
+      const jsonText = extractJsonObject(cleanedText);
+      if (jsonText) {
+        explanation = JSON.parse(jsonText);
       } else {
         throw new Error("Failed to parse AI response as JSON");
       }

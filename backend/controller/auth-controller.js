@@ -74,3 +74,10 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get user profile (placeholder)
+// @route   GET /api/auth/profile
+// @access  Public (should be protected with auth middleware)
+export const getUserProfile = async (req, res) => {
+  res.status(501).json({ message: "Not implemented" });
+};

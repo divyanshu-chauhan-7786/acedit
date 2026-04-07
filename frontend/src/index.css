@@ -1,2 +1,62 @@
 @import url("https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
+
+@keyframes hero-line-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.hero-line-animate {
+  animation: hero-line-rise 900ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-line-animate {
+    animation: none;
+  }
+}
+
+@keyframes hero-typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes hero-caret {
+  0%,
+  49% {
+    border-color: currentColor;
+  }
+  50%,
+  100% {
+    border-color: transparent;
+  }
+}
+
+.hero-typing {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  border-right: 2px solid currentColor;
+  animation: hero-typing 2.2s steps(18, end) 0.2s forwards,
+    hero-caret 700ms steps(1, end) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-typing {
+    animation: none;
+    border-right: 0;
+  }
+}
