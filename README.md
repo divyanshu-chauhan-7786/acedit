@@ -80,6 +80,14 @@ Questions
 
 ## Screens / Pages
 - Landing page with AI-focused messaging and hero animation
+<img width="1427" height="840" alt="image" src="https://github.com/user-attachments/assets/647adaf1-01a5-4c7a-b17c-36d71d8dfdc6" />
+
 - Auth pages (login, signup)
+<img width="608" height="619" alt="image" src="https://github.com/user-attachments/assets/488da21a-7897-4ef9-a51f-0cb37a6a59d8" />
+
 - Dashboard to manage sessions
+<img width="1147" height="806" alt="image" src="https://github.com/user-attachments/assets/d1843700-63c2-4cf7-a56c-2e12948c9cf1" />
+
 - Interview prep view with questions, explanations, and pinning
+<img width="1142" height="819" alt="image" src="https://github.com/user-attachments/assets/7a59cc1d-d0ca-4237-ad81-3bea5a015fff" />
+
